@@ -52,6 +52,7 @@ add_library(vk_canvas SHARED
     cpp/renderer.cc
     cpp/canvas.cc
     cpp/textarea.cc
+    cpp/widgets.cc
     ${FONT_ENGINE_DIR}/cpp/font.cc
     ${FONT_ENGINE_DIR}/cpp/glyphs.cc
     ${FONT_ENGINE_DIR}/cpp/msdf.cc

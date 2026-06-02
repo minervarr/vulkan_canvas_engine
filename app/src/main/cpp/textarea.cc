@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "font.hh"
+#include "utf8.hh"
 
 void TextArea::setRect(float x, float y, float w, float h) {
   if (w != rect_.w) layoutDirty_ = true;   // width drives wrapping
@@ -65,8 +66,13 @@ void TextArea::relayout_(const Canvas& c, float size, float maxW) {
         }
         size_t chunkStart = w;
         float chunkW = 0.0f;
-        for (size_t ch = w; ch < sp; ch++) {
-          std::string_view single(text_.data() + ch, 1);
+        std::string_view wordSv(text_.data() + w, sp - w);
+        size_t rel = 0;  // codepoint-aligned offset within wordSv
+        while (rel < wordSv.size()) {
+          size_t prev = rel;
+          utf8::nextCodepoint(wordSv, rel);   // advance one whole codepoint
+          size_t ch = w + prev;
+          std::string_view single(text_.data() + ch, rel - prev);
           float cw = c.textWidth(single, size);
           if (chunkStart < ch && chunkW + cw > maxW) {
             lines_.emplace_back(text_.data() + chunkStart, ch - chunkStart);

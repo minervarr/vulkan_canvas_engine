@@ -19,6 +19,10 @@ namespace col {
   constexpr Color btnIdle = {0.18f, 0.20f, 0.26f, 1.0f};  // Subtle indigo
   constexpr Color btnRec  = {0.95f, 0.20f, 0.30f, 1.0f};  // Bright recording red
   constexpr Color btnWait = {0.26f, 0.26f, 0.14f, 1.0f};
+  constexpr Color accent  = {0.30f, 0.55f, 0.95f, 1.0f};  // Selection / on-state blue
+  constexpr Color track   = {0.22f, 0.22f, 0.28f, 1.0f};  // Slider track / inset
+  constexpr Color thumb   = {0.82f, 0.84f, 0.90f, 1.0f};  // Slider thumb / knob
+  constexpr Color panel2  = {0.15f, 0.15f, 0.19f, 1.0f};  // Secondary panel / row
 }
 
 struct Rect {
@@ -80,6 +84,9 @@ public:
   // dropped, and the bounding box the rasteriser tiles by is clamped to the
   // clip. Granularity is tile-level (~16px), so this is a bleed safety net,
   // not a pixel-perfect mask. clearClip() restores unclipped drawing.
+  // Draw a fast solid rectangular quad using MSDF (bypassing curve generation)
+  void quadMsdfRect(float x, float y, float w, float h, Color c);
+
   void setClip(float x, float y, float w, float h);
   void clearClip();
 

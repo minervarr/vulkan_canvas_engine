@@ -2,6 +2,7 @@
 #include "font.hh"
 #include "glyphs.hh"
 #include "msdf.hh"
+#include "utf8.hh"
 
 #include <algorithm>
 
@@ -38,6 +39,29 @@ void Canvas::rect(float x, float y, float w, float h, Color c, float radius) {
                    w * 0.5f,     h * 0.5f,
                    c.r, c.g, c.b, c.a, radius);
     clipFrom_(start);
+}
+
+void Canvas::quadMsdfRect(float x, float y, float w, float h, Color c) {
+    if (!msdf_ || !quads_) { rect(x, y, w, h, c, 0.0f); return; }
+    GlyphQuad q;
+    msdf_->layout('I', 0.0f, 0.0f, 100.0f, q);
+    float uc = (q.u0 + q.u1) * 0.5f;
+    float vc = (q.v0 + q.v1) * 0.5f;
+
+    float x0 = x, y0 = y, x1 = x + w, y1 = y + h;
+    if (clipActive_) {
+        if (x1 <= clipX0_ || x0 >= clipX1_ || y1 <= clipY0_ || y0 >= clipY1_) return;
+        x0 = std::max(x0, clipX0_); x1 = std::min(x1, clipX1_);
+        y0 = std::max(y0, clipY0_); y1 = std::min(y1, clipY1_);
+    }
+    auto vert = [&](float vx, float vy) {
+        quads_->push_back(vx); quads_->push_back(vy);
+        quads_->push_back(uc); quads_->push_back(vc);
+        quads_->push_back(c.r); quads_->push_back(c.g);
+        quads_->push_back(c.b); quads_->push_back(c.a);
+    };
+    vert(x0, y0); vert(x1, y0); vert(x1, y1);
+    vert(x0, y0); vert(x1, y1); vert(x0, y1);
 }
 
 void Canvas::setClip(float x, float y, float w, float h) {
@@ -85,9 +109,10 @@ void Canvas::emitText_(std::string_view str, float x, float baselineY, float siz
 // and append two triangles to the quad buffer.
 void Canvas::emitTextMsdf_(std::string_view str, float x, float baselineY, float size, Color c) {
     float pen = x;
-    for (char s : str) {
+    for (size_t i = 0; i < str.size(); ) {
+        uint32_t cp = utf8::nextCodepoint(str, i);
         GlyphQuad q;
-        pen = msdf_->layout((uint32_t)(unsigned char)s, pen, baselineY, size, q);
+        pen = msdf_->layout(cp, pen, baselineY, size, q);
         if (!q.draw) continue;
 
         float x0 = q.x0, y0 = q.y0, x1 = q.x1, y1 = q.y1;
